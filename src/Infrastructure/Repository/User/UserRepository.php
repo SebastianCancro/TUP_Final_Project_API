@@ -1,129 +1,70 @@
 <?php 
 
+declare(strict_types = 1);
+
 namespace Src\Infrastructure\Repository\User;
 
+use DateTime;
 use Src\Infrastructure\PDO\PDOManager;
 use Src\Entity\User\User;
 
 final readonly class UserRepository extends PDOManager implements UserRepositoryInterface {
-    public function find(int $id): ?User
+
+    public function findByEmailAndPassword(string $email, string $password): ?User 
     {
-        $query = <<<HEREDOC
-                        SELECT 
-                            *
-                        FROM
-                            user C
-                        WHERE
-                            C.id = :id AND C.deleted = 0
-                    HEREDOC;
+        $query = "SELECT * FROM users WHERE email = :email AND password = :password";
 
         $parameters = [
-            "id" => $id,
+            "email" => $email,
+            "password" => $password,
         ];
 
         $result = $this->execute($query, $parameters);
-
-        return $this->toUser($result[0] ?? null);
-    }
-
-    /** @return User[] */
-    public function search(): array
-    {
-        $query = <<<HEREDOC
-                        SELECT
-                            *
-                        FROM
-                            user C
-                        WHERE
-                            C.deleted = 0
-                    HEREDOC;
         
-        $results = $this->execute($query);
-
-        $users = [];
-        foreach($results as $result) {
-            $users[] = $this->toUser($result);
-        }
-
-        return $users;
+        return $this->primitiveToUser($result[0] ?? null);
     }
 
-    public function searchByGenre(int $genre_id): array
+    public function findByToken(string $token): ?User 
     {
-        $query = <<<HEREDOC
-                        SELECT
-                            *
-                        FROM
-                            user C
-                        WHERE
-                            C.genre_id = :genre_id AND C.deleted = 0
-                    HEREDOC;
+        $query = "SELECT * FROM users WHERE token = :token AND :date <= token_auth_date";
 
         $parameters = [
-            "genre_id" => $genre_id,
+            "token" => $token,
+            "date" => date("Y-m-d H:i:s"),
         ];
 
-        $results = $this->execute($query, $parameters);
-
-        $users = [];
-        foreach($results as $result) {
-            $users[] = $this->toUser($result);
-        }
-
-        return $users;
-    }
-
-
-    public function create(User $user): void
-    {
-        $query = <<<INSERT_QUERY
-                        INSERT INTO user (name, genre_id, description, image, date, deleted)
-                        VALUES (:name, :genre_id, :description, :image, :date, :deleted)
-                    INSERT_QUERY;
-
-        $parameters = [
-            "name" => $user->name(),
-            "genre_id" => $user->genre_id(),
-            "description" => $user->description(),
-            "image" => $user->image(),
-            "date" => $user->date(),
-            "deleted" => $user->deleted()
-        ];
-
-        $this->execute($query, $parameters);
+        $result = $this->execute($query, $parameters);
+        
+        return $this->primitiveToUser($result[0] ?? null);
     }
 
     public function update(User $user): void
     {
-        $query = <<<UPDATE_CATEGORY
-                    UPDATE
-                        user
-                    SET
-                        name = :name,
-                        genre_id = :genre_id,
-                        description = :description,
-                        image = :image,
-                        date = :date,
-                        deleted = :deleted
+        $query = <<<UPDATE_QUERY
+                        UPDATE
+                            users
+                        SET
+                            email = :email,
+                            password = :password,
+                            token = :token,
+                            token_auth_date = :tokenAuthDate
+                        WHERE
+                            id = :id
+                    UPDATE_QUERY;
 
-                    WHERE
-                        id = :id
-                UPDATE_CATEGORY;
-        
         $parameters = [
-            "name" => $user->name(),
-            "genre_id" => $user->genre_id(),
-            "description" => $user->description(),
-            "image" => $user->image(),
-            "date" => $user->date(),
-            "deleted" => $user->deleted(),
+            "email" => $user->email(),
+            "password" => $user->password(),
+            "token" => $user->token(),
+            "tokenAuthDate" => $user->tokenAuthDate()->format("Y-m-d H:i:s"),
             "id" => $user->id()
         ];
 
         $this->execute($query, $parameters);
     }
 
-    private function toUser(?array $primitive): ?User {
+    private function primitiveToUser(?array $primitive): ?User
+    {
         if ($primitive === null) {
             return null;
         }
@@ -131,11 +72,10 @@ final readonly class UserRepository extends PDOManager implements UserRepository
         return new User(
             $primitive["id"],
             $primitive["name"],
-            $primitive["genre_id"],
-            $primitive["description"],
-            $primitive["image"],
-            $primitive["date"],
-            (bool) $primitive["deleted"]
+            $primitive["email"],
+            $primitive["password"],
+            $primitive["token"],
+            new DateTime($primitive["token_auth_date"]),
         );
     }
 }

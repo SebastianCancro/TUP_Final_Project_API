@@ -37,7 +37,6 @@ final class PDOClient {
             );
             
             $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $conn->exec("SET NAMES utf8mb4");
 
             self::$activeClients[$_ENV['DATABASE_USER']] = $conn;
 
@@ -51,7 +50,7 @@ final class PDOClient {
     private function generateUrl(): string
     {
         return sprintf(
-            '%s:host=%s;dbname=%s;charset=utf8mb4',
+            '%s:host=%s;dbname=%s',
             $_ENV['DATABASE_DRIVER'],
             sprintf('%s:%s', $_ENV['DATABASE_HOST'], $_ENV['DATABASE_PORT']),
             $_ENV['DATABASE_NAME']

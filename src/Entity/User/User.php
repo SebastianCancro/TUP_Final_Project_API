@@ -2,38 +2,21 @@
 
 namespace Src\Entity\User;
 
+use DateTime;
+
 final class User {
+
     public function __construct(
-        private readonly ?int $id,
+        private readonly int $id,
         private string $name,
-        private int $genre_id,
-        private string $description,
-        private string $image,
-        private string $date,
-        private bool $deleted
+        private string $email,
+        private string $password,
+        private string $token,
+        private DateTime $tokenAuthDate
     ) {
     }
 
-    public static function create(string $name, int $genre_id, string $description, string $image, string $date): self
-    {
-        return new self(null, $name, $genre_id,$description, $image,$date, false);
-    }
-
-    public function modify(string $name, int $genre_id, string $description, string $image, string $date): void
-    {
-        $this->name = $name;
-        $this->genre_id = $genre_id;
-        $this->description = $description;
-        $this->image = $image;
-        $this->date = $date;
-    }
-
-    public function delete(): void
-    {
-        $this->deleted = true;
-    }
-
-    public function id(): ?int
+    public function id(): int
     {
         return $this->id;
     }
@@ -43,25 +26,29 @@ final class User {
         return $this->name;
     }
 
-    public function genre_id(): int
+    public function email(): string
     {
-        return $this->genre_id;
+        return $this->email;
     }
 
-    public function description(): string
+    public function password(): string
     {
-        return $this->description;
+        return $this->password;
     }
-    public function image(): string
+
+    public function token(): string
     {
-        return $this->image;
+        return $this->token;
     }
-    public function date(): string
+
+    public function tokenAuthDate(): DateTime
     {
-        return $this->date;
+        return $this->tokenAuthDate;
     }
-    public function deleted(): int
+
+    public function generateToken(): void
     {
-        return $this->deleted ? 1 : 0;
+        $this->token = md5($this->email.$this->id.rand(1000, 9999).date("YmdHis"));
+        $this->tokenAuthDate = new DateTime("+1 hours");
     }
 }

@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('America/Argentina/Buenos_Aires');
 
 // Cargamos configuración de composer
 require_once dirname(__DIR__).'/html/vendor/autoload.php';
@@ -6,6 +7,10 @@ require_once dirname(__DIR__).'/html/vendor/autoload.php';
 require_once dirname(__DIR__).'/html/app/Router/Routes.php';
 // Inicializamos el autoloader
 require_once dirname(__DIR__).'/html/app/Autoloader/Autoloader.php';
+
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: *');
 
 // Utilizamos la libreria 'Dotenv' para cargar nuestros datos
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
@@ -18,7 +23,8 @@ spl_autoload_register(
             "src/Service",
             "src/Entity",
             "src/Infrastructure",
-            "src/Utils"
+            "src/Utils",
+            "src/Middleware"
         ]);
     }
 );
@@ -31,9 +37,6 @@ $url = $_SERVER["REQUEST_URI"];
 
 $url = explode("?", $url)[0];
 
-// Permitir acceso hacia la API
-header('Access-Control-Allow-Origin: http://localhost:5173');
-
 try {
     // A partir del URL y del metodo, el Routeador decide por que ruta entrar
     $router->resolve(
@@ -41,10 +44,16 @@ try {
         $_SERVER['REQUEST_METHOD']
     );
 } catch (Exception $e) {   
+    $status = 404;
+
+    if ($e->getMessage() == "El usuario no se encuentra autorizado.") {
+        $status = 401;
+    }
+
     // Si la ruta no existe, devolvemos un error 404
-    header("HTTP/1.0 404 Not Found");
+    header("HTTP/1.0 $status Not Found");
     echo json_encode([
-        "status" => 404,
+        "status" => $status,
         "message"=> $e->getMessage()
     ]);
 }

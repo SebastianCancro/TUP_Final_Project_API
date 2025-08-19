@@ -8,12 +8,14 @@ function startRouter(): Router
     // Inicializamos el array de rutas
     $routes = [];
     
-    // Cargamos las rutas de Dominio
+    // Cargamos las rutas
     include_once "Routes/DomainRoutes.php";
-    // A las rutas actuales, les sumamos las de dominio
     $routes = array_merge($routes, DomainRoutes::getRoutes());
     
     include_once "Routes/UserRoutes.php";
+    $routes = array_merge($routes, UserRoutes::getRoutes());
+
+    include_once "Routes/ArticleRoutes.php";
     $routes = array_merge($routes, UserRoutes::getRoutes());
 
     // Como las rutas en este momento son primitivas, tenemos que encapsularlas en un DTO
